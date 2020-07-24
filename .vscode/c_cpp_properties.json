@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/root/ros_ws/devel/include/**",
+                "/opt/ros/melodic/include/**",
+                "/root/ros_ws/src/map_pcl/include/**",
+                "/root/ros_ws/src/octomap_mapping/octomap_server/include/**",
+                "/root/ros_ws/src/velodyne_simulator/velodyne_gazebo_plugins/include/**",
+                "/usr/include/**"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu11",
+            "cppStandard": "gnu++14"
+        }
+    ],
+    "version": 4
+}
