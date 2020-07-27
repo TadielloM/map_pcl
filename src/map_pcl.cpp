@@ -4,6 +4,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
+#include <std_srvs/Empty.h>
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -19,8 +20,12 @@ void velodyne_callback(const sensor_msgs::PointCloud2ConstPtr &msg)
     sor.filter (*tmp_cloud);
     //Add new input to previus cloud
     *cloud = *cloud + *tmp_cloud;
+}
 
-    
+bool resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp) {
+  cloud->clear();
+  ROS_INFO("Point Cloud Map");
+  return true;
 }
 
 int main(int argc, char** argv){
@@ -31,6 +36,7 @@ int main(int argc, char** argv){
     ros::Subscriber velodyne_subscriber;
     velodyne_subscriber = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 10, velodyne_callback);
     ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2> ("/map_points",1);
+    ros::ServiceServer resetService = nh.advertiseService("/map_pcl/reset", resetSrv);
     //Setting rate of one second
     ros::Rate rate(1);
 
