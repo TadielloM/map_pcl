@@ -31,7 +31,7 @@ void velodyne_callback(const sensor_msgs::PointCloud2ConstPtr &msg)
 
 bool resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp) {
   cloud->clear();
-  ROS_INFO("Point Cloud Map");
+  // ROS_INFO("Point Cloud Map Resetting");
   return true;
 }
 
