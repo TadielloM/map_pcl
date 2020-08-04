@@ -39,11 +39,11 @@ int main(int argc, char** argv){
     //Initialize ROS
     ros::init (argc,argv,"map_pcl");
     ros::NodeHandle nh;
-    
+    ros::Duration(5).sleep();
     listener = new(tf::TransformListener);
     //Set up subscriber and Publisher
     ros::Subscriber velodyne_subscriber;
-    velodyne_subscriber = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 10, velodyne_callback);
+    velodyne_subscriber = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 1, velodyne_callback);
     ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2> ("/map_points",1);
     ros::ServiceServer resetService = nh.advertiseService("/map_pcl/reset", resetSrv);
     //Setting rate of one second
