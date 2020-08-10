@@ -18,15 +18,20 @@ void velodyne_callback(const sensor_msgs::PointCloud2ConstPtr &msg)
     pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg (*msg, *tmp_cloud);
     //Filtering input cloud
-    pcl::VoxelGrid<pcl::PointXYZ> sor;
-    sor.setInputCloud (tmp_cloud);
-    sor.setLeafSize (0.5, 0.5, 0.5); //50cm filter
-    sor.filter (*tmp_cloud);
+    // pcl::VoxelGrid<pcl::PointXYZ> sor;
+    // sor.setInputCloud (tmp_cloud);
+    // sor.setLeafSize (0.5, 0.5, 0.5); //50cm filter
+    // sor.filter (*tmp_cloud);
     //Add new input to previus cloud
+    
+    
     pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
+    std::vector<int> indices;
+    pcl::removeNaNFromPointCloud(*tmp_cloud, *tmp_cloud2, indices);
 
-    pcl_ros::transformPointCloud("map", *tmp_cloud, *tmp_cloud2, *listener);
-    *cloud = *cloud + *tmp_cloud2;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud3 (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl_ros::transformPointCloud("map", *tmp_cloud2, *tmp_cloud3, *listener);
+    *cloud = *cloud + *tmp_cloud3;
 }
 
 bool resetSrv(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp) {
@@ -64,7 +69,7 @@ int main(int argc, char** argv){
         pcl::VoxelGrid<pcl::PointXYZ> sor;
         sor.setInputCloud (cloud);
         sor.setLeafSize (0.5, 0.5, 0.5); //50cm filter
-        sor.filter (*cloud);        
+        sor.filter (*cloud);
 
         //Create new message, convert it and send it
         sensor_msgs::PointCloud2 output;
