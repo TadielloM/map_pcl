@@ -68,7 +68,7 @@ int main(int argc, char** argv){
         // Create the filtering object and perform filtering
         pcl::VoxelGrid<pcl::PointXYZ> sor;
         sor.setInputCloud (cloud);
-        sor.setLeafSize (0.5, 0.5, 0.5); //50cm filter
+        sor.setLeafSize (0.3, 0.3, 0.3); //50cm filter
         sor.filter (*cloud);
 
         //Create new message, convert it and send it
