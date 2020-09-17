@@ -32,7 +32,7 @@ class MapPcl{
 
     void velodyne_callback(const sensor_msgs::PointCloud2ConstPtr &msg)
     {
-        ROS_INFO("Point Cloud Map: callback");
+        // ROS_INFO("Point Cloud Map: callback");
         std::cout<<msg->header.frame_id<<std::endl;
         //Converting ROSmsg to pPCL
         pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -54,7 +54,6 @@ class MapPcl{
         try{
           listener->lookupTransform("/velodyne_base", "/map",  
                                    ros::Time(0), transform);
-          ROS_INFO("transform heard");
         }
         catch (tf::TransformException ex){
           ROS_ERROR("%s",ex.what());
