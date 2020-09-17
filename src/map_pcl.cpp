@@ -8,6 +8,7 @@
 #include <tf/transform_listener.h>
 #include <pcl_ros/transforms.h>
 
+
 class MapPcl{
   private: 
     ros::NodeHandle nh_;
@@ -16,6 +17,7 @@ class MapPcl{
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
     tf::TransformListener* listener;
     ros::Publisher pub_velodyne;
+    ros::Publisher pub;
 
     MapPcl(ros::NodeHandle *nh):
       nh_(*nh),
@@ -23,13 +25,15 @@ class MapPcl{
       cloud(new pcl::PointCloud<pcl::PointXYZ>)
     {
       pub_velodyne = nh_.advertise<sensor_msgs::PointCloud2> ("/velodyne_points_transformed",1);
+      pub = nh_.advertise<sensor_msgs::PointCloud2> ("/map_points",1);
     }
 
     ~MapPcl(){}
 
     void velodyne_callback(const sensor_msgs::PointCloud2ConstPtr &msg)
     {
-        // ROS_INFO("Point Cloud Map: callback");
+        ROS_INFO("Point Cloud Map: callback");
+        std::cout<<msg->header.frame_id<<std::endl;
         //Converting ROSmsg to pPCL
         pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromROSMsg (*msg, *tmp_cloud);
@@ -45,12 +49,21 @@ class MapPcl{
         std::vector<int> indices;
         pcl::removeNaNFromPointCloud(*tmp_cloud, *tmp_cloud2, indices);
 
+        //listen tf transform
+        tf::StampedTransform transform;
+        try{
+          listener->lookupTransform("/velodyne_base", "/map",  
+                                   ros::Time(0), transform);
+          ROS_INFO("transform heard");
+        }
+        catch (tf::TransformException ex){
+          ROS_ERROR("%s",ex.what());
+          ros::Duration(1.0).sleep();
+        }
+
         pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud3 (new pcl::PointCloud<pcl::PointXYZ>);
         pcl_ros::transformPointCloud("map", *tmp_cloud2, *tmp_cloud3, *listener);
         *cloud = *cloud + *tmp_cloud3;
-
-        *cloud = *cloud + *tmp_cloud2;
-
 
         //publish transformed velodyne_points 
         // //Create new message, convert it and send it
@@ -70,8 +83,31 @@ class MapPcl{
       return true;
     }
 
+    void publish_map(const ros::TimerEvent& event){  
+            // Create the filtering object and perform filtering
+            pcl::VoxelGrid<pcl::PointXYZ> sor;
+            sor.setInputCloud (cloud);
+            sor.setLeafSize (0.3, 0.3, 0.3); //30cm filter
+
+            sor.filter (*cloud);
+
+            //Create new message, convert it and send it
+            sensor_msgs::PointCloud2 output;
+            pcl::PCLPointCloud2Ptr cloud_tmp(new pcl::PCLPointCloud2());
+            pcl::toPCLPointCloud2(*cloud, *cloud_tmp);
+            pcl_conversions::fromPCL(*cloud_tmp, output);
+
+            output.header.frame_id = "map";
+
+            pub.publish(output);
+
+  }
 
 };
+
+
+
+
 int main(int argc, char** argv){
     //Initialize ROS
     ros::init (argc,argv,"map_pcl");
@@ -79,44 +115,10 @@ int main(int argc, char** argv){
     ros::Duration(5).sleep();
     MapPcl map_pcl(&nh);
     //Set up subscriber and Publisher
-    ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2> ("/map_points",1);
     ros::ServiceServer resetService = nh.advertiseService("/map_pcl/reset", &MapPcl::resetSrv, &map_pcl);
     ros::Subscriber velodyne_subscriber;
     velodyne_subscriber = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 1, &MapPcl::velodyne_callback, &map_pcl);
-    
-    //Setting rate of one second
-    ros::Rate rate(1);
-
-    while(ros::ok()){
-        //listen tf transform
-        tf::StampedTransform transform;
-        try{
-          map_pcl.listener->lookupTransform("/velodyne_base", "/map",  
-                                   ros::Time(0), transform);
-          ROS_INFO("transform heard");
-        }
-        catch (tf::TransformException ex){
-          ROS_ERROR("%s",ex.what());
-          ros::Duration(1.0).sleep();
-        }
-        // Create the filtering object and perform filtering
-        pcl::VoxelGrid<pcl::PointXYZ> sor;
-        sor.setInputCloud (map_pcl.cloud);
-        sor.setLeafSize (0.3, 0.3, 0.3); //30cm filter
-
-        sor.filter (*(map_pcl.cloud));
-
-        //Create new message, convert it and send it
-        sensor_msgs::PointCloud2 output;
-        pcl::PCLPointCloud2Ptr cloud_tmp(new pcl::PCLPointCloud2());
-        pcl::toPCLPointCloud2(*(map_pcl.cloud), *cloud_tmp);
-        pcl_conversions::fromPCL(*cloud_tmp, output);
-
-        output.header.frame_id = "map";
-
-        pub.publish(output);
-        rate.sleep();
-        ros::spinOnce();
-    }
+    ros::Timer timer = nh.createTimer(ros::Duration(1), &MapPcl::publish_map, &map_pcl);
+    ros::spin();
     return 0;
 }
