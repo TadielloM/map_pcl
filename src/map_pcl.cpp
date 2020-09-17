@@ -33,7 +33,6 @@ class MapPcl{
     void velodyne_callback(const sensor_msgs::PointCloud2ConstPtr &msg)
     {
         // ROS_INFO("Point Cloud Map: callback");
-        std::cout<<msg->header.frame_id<<std::endl;
         //Converting ROSmsg to pPCL
         pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromROSMsg (*msg, *tmp_cloud);
