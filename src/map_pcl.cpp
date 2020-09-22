@@ -35,6 +35,7 @@ class MapPcl{
         // ROS_INFO("Point Cloud Map: callback");
         //Converting ROSmsg to pPCL
         pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        // std::cout<<"The frame id is: "<<msg->header.frame_id<<std::endl;
         pcl::fromROSMsg (*msg, *tmp_cloud);
         //Filtering input cloud
         // pcl::VoxelGrid<pcl::PointXYZ> sor;
@@ -64,13 +65,24 @@ class MapPcl{
         *cloud = *cloud + *tmp_cloud3;
 
         //publish transformed velodyne_points 
+        //listen tf transform
+        try{
+          listener->lookupTransform("/velodyne_base", "/base_link",  
+                                   ros::Time(0), transform);
+        }
+        catch (tf::TransformException ex){
+          ROS_ERROR("%s",ex.what());
+          ros::Duration(1.0).sleep();
+        }
         // //Create new message, convert it and send it
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_velodyne_base (new pcl::PointCloud<pcl::PointXYZ>);
+        pcl_ros::transformPointCloud("base_link", *tmp_cloud2, *cloud_velodyne_base, *listener);
         sensor_msgs::PointCloud2 velodyne_points_transformed;
         pcl::PCLPointCloud2Ptr velodyne_tmp(new pcl::PCLPointCloud2());
-        pcl::toPCLPointCloud2(*tmp_cloud3, *velodyne_tmp);
+        pcl::toPCLPointCloud2(*cloud_velodyne_base, *velodyne_tmp);
         pcl_conversions::fromPCL(*velodyne_tmp, velodyne_points_transformed);
-
-        velodyne_points_transformed.header.frame_id = "map";
+        
+        velodyne_points_transformed.header.frame_id = "base_link";
 
         pub_velodyne.publish(velodyne_points_transformed);
     }
