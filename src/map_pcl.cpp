@@ -52,11 +52,14 @@ class MapPcl{
         //listen tf transform
         tf::StampedTransform transform;
         try{
+          ros::Time now = ros::Time::now();
+          listener->waitForTransform("/velodyne_base", "/map",
+                          now, ros::Duration(0.1));
           listener->lookupTransform("/velodyne_base", "/map",  
-                                   ros::Time(0), transform);
+                                   now, transform);
         }
         catch (tf::TransformException ex){
-          ROS_ERROR("%s",ex.what());
+          // ROS_ERROR("%s",ex.what());
           ros::Duration(1.0).sleep();
         }
 
@@ -67,11 +70,14 @@ class MapPcl{
         //publish transformed velodyne_points 
         //listen tf transform
         try{
+          ros::Time now = ros::Time::now();
+          listener->waitForTransform("/velodyne_base", "/base_link",
+                          now, ros::Duration(0.1));
           listener->lookupTransform("/velodyne_base", "/base_link",  
-                                   ros::Time(0), transform);
+                                   now, transform);
         }
         catch (tf::TransformException ex){
-          ROS_ERROR("%s",ex.what());
+          // ROS_ERROR("%s",ex.what());
           ros::Duration(1.0).sleep();
         }
         // //Create new message, convert it and send it
